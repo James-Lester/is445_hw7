@@ -1,8 +1,16 @@
-const fetchPaintings = async () => {
-    const url = "https://raw.githubusercontent.com/bpesquet/thejsway/master/resources/paintings.json";
+const fetchUser = async (accountId) => {
+    const url = `https://api.github.com/users/${accountId}`;
+
+    const request = new Request(url, {
+        method: "GET",
+        headers: {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2026-03-10"
+        }
+    })
 
     try {
-        const response = await fetch(url);
+        const response = await fetch(request);
         if (!response.ok) {
             throw new Error(`Response status: ${response.status}`);
         }
@@ -14,28 +22,36 @@ const fetchPaintings = async () => {
     }
 }
 
-const buildTable = async () => {
-    const table = document.getElementById("paintings");
-    const paintings = await fetchPaintings();
+const hydrate = async () => {
+    const userSearch = document.getElementById("userSearch");
+    
+    const promise = fetchUser(userSearch.value);
+    const imgElem = document.getElementById("img");
+   
+    imgElem.innerHTML = "";
+    
+    document.getElementById("name").textContent = "";
+    document.getElementById("blog").textContent = "";
+    document.getElementById("created").textContent = "";
 
-    paintings.forEach(p => {
-        let row = document.createElement("tr");
+    const user = await promise;
+    if (!(await user)) {
+        return;
+    }
 
-        let name = document.createElement("td");
-        name.textContent = p.name;
+    const img = document.createElement("img");
+    img.src = user.avatar_url;
+    imgElem.appendChild(img);
 
-        let year = document.createElement("td");
-        year.textContent = p.year;
+    document.getElementById("name").textContent = user.name;
+    document.getElementById("blog").textContent = user.blog;
+    document.getElementById("created").textContent = user.created_at;
 
-        let artist = document.createElement("td");
-        artist.textContent = p.artist;
-
-        row.appendChild(name);
-        row.appendChild(year);
-        row.appendChild(artist);
-        table.appendChild(row);
-    })
 }
 
+const domLoaded = () => {
+    const btn = document.getElementById("searchButton");
+    btn.addEventListener("click", hydrate);
+}
 
-buildTable();
+window.addEventListener("DOMContentLoaded", domLoaded);
